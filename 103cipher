@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+import sys
+import math
+
+def print_matrix_c(matrix):
+    print("Encrypted message:")
+    print('\t'.join(str(element) for row in matrix for element in row))
+
+def print_matrix_d(matrix):
+    print("Decrypted message:")
+    result = ""
+    for row in matrix:
+        for element in row:
+            val = round(element)
+            if val > 0:
+                result += chr(val)
+    print(result)
+
+def print_key_matrice(matrix, row):
+    print("Key matrix:")
+    for line in matrix:
+        print("\t".join(str(line[j]) for j in range(row)))
+    print()
+
+def multiply_matrix(A, B):
+    len_a = len(A)
+    len_key = len(A[0])
+    len_mess = len(B[0])
+    res = [[0 for _ in range(len_mess)] for _ in range(len_a)]
+
+    for i in range(len_a):
+        for j in range(len_mess):
+            total = 0
+            for k in range(len_key):
+                total += A[i][k] * B[k][j]
+            res[i][j] = total
+    return res
+
+def multiply_matrix_float(A, B):
+    len_a = len(A)
+    len_key = len(A[0])
+    len_mess = len(B[0])
+    res = [[0.0 for _ in range(len_mess)] for _ in range(len_a)]
+
+    for i in range(len_a):
+        for j in range(len_mess):
+            total = 0.0
+            for k in range(len_key):
+                total += A[i][k] * B[k][j]
+            res[i][j] = total
+    return res
+
+def matrix_mess(message, key_size):
+    len_mess = len(message)
+    res = [[0 for _ in range(key_size)] for _ in range(math.ceil(len_mess / key_size))]
+    k = 0
+
+    for i in range(math.ceil(len_mess / key_size)):
+        for j in range(key_size):
+            if k < len_mess:
+                res[i][j] = ord(message[k])
+                k += 1
+    return res
+
+def matrix_key(message_key, print_key=True):
+    len_mess = len(message_key)
+    len_matrix = math.ceil(math.sqrt(len_mess))
+    res = [[0 for _ in range(len_matrix)] for _ in range(len_matrix)]
+    k = 0
+
+    for i in range(len_matrix):
+        for j in range(len_matrix):
+            if k < len_mess:
+                res[i][j] = ord(message_key[k])
+                k += 1
+    if print_key:
+        print_key_matrice(res, len_matrix)
+    return res
+
+def print_inv_matrice(matrix):
+    n = len(matrix)
+    print("Key matrix:")
+    for i in range(n):
+        row_str = "\t".join(f"{matrix[i][j]:.3f}" for j in range(n))
+        print(row_str)
+    print()
+
+def inverse_matrix_gauss(matrix):
+    n = len(matrix)
+    aug = [[0.0] * (2 * n) for _ in range(n)]
+
+    for i in range(n):
+        for j in range(n):
+            aug[i][j] = float(matrix[i][j])
+        aug[i][n + i] = 1.0
+    for col in range(n):
+        max_row = col
+        for row in range(col + 1, n):
+            if abs(aug[row][col]) > abs(aug[max_row][col]):
+                max_row = row
+        aug[col], aug[max_row] = aug[max_row], aug[col]
+        pivot = aug[col][col]
+        if pivot == 0:
+            return None
+        for j in range(2 * n):
+            aug[col][j] /= pivot
+        for row in range(n):
+            if row != col:
+                factor = aug[row][col]
+                for j in range(2 * n):
+                    aug[row][j] -= factor * aug[col][j]
+    inv = [[aug[i][j + n] for j in range(n)] for i in range(n)]
+    return inv
+
+def parse_encrypted_message(message, key_size):
+    numbers = message.split()
+    nums = [int(x) for x in numbers]
+    rows = math.ceil(len(nums) / key_size)
+    res = [[0 for _ in range(key_size)] for _ in range(rows)]
+    k = 0
+    for i in range(rows):
+        for j in range(key_size):
+            if k < len(nums):
+                res[i][j] = nums[k]
+                k += 1
+    return res
+
+def check_error(argv):
+    if len(argv) != 4:
+        return 1
+    try:
+        argv[1].encode('ascii')
+        argv[2].encode('ascii')
+    except (UnicodeEncodeError, AttributeError):
+        return 1
+    try:
+        flag = int(argv[3])
+        if flag not in [0, 1]:
+            return 1
+    except (ValueError, IndexError):
+        return 1
+    return 0
+
+def print_h():
+    print("USAGE")
+    print("    ./103cipher message key flag")
+    print()
+    print("DESCRIPTION")
+    print("    message       a message, made of ASCII characters")
+    print("    key           the encryption key, made of ASCII characters")
+    print("    flag          0 for the message to be encrypted, 1 to be decrypted")
+
+def main():
+    if len(sys.argv) == 2 and sys.argv[1] == "-h":
+        print_h()
+        exit(0)
+    if check_error(sys.argv) == 1:
+        exit(84)
+    if int(sys.argv[3]) == 0:
+        key_matrix = matrix_key(sys.argv[2])
+        key_size = len(key_matrix)
+        mess_matrix = matrix_mess(sys.argv[1], key_size)
+        new_matrix = multiply_matrix(mess_matrix, key_matrix)
+        print_matrix_c(new_matrix)
+    else:
+        key_matrix = matrix_key(sys.argv[2], print_key=False)
+        key_size = len(key_matrix)
+        inv_key = inverse_matrix_gauss(key_matrix)
+        if inv_key is None:
+            exit(84)
+        print_inv_matrice(inv_key)
+        enc_matrix = parse_encrypted_message(sys.argv[1], key_size)
+        dec_matrix = multiply_matrix_float(enc_matrix, inv_key)
+        print_matrix_d(dec_matrix)
+
+if __name__ == "__main__":
+    main()
