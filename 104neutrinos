@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+
+import sys
+from math import sqrt
+
+def print_help():
+    print("USAGE")
+    print("      ./104neutrinos n a h sd")
+    print("")
+    print("DESCRIPTION")
+    print("      n       number of values")
+    print("      a       arithmetic mean")
+    print("      h       harmonic mean")
+    print("      sd      standard deviation")
+
+def deviation(rms, a):
+    value = sqrt((rms ** 2) - (a ** 2))
+    return value
+
+def harmonic(n, h, value):
+    if value == 0 or h == 0:
+        sys.exit(84)
+    initial_sum = (n - 1) / h
+    final_sum = initial_sum + (1 / value)
+    if final_sum == 0:
+        sys.exit(84);
+    return n / final_sum
+
+def arithmetic(n, Xn, Xn1):
+    value = (float(Xn) * (n - 1) + float(Xn1)) / n
+    return value
+
+def root(n, old_rms, nb):
+    old_sum_sq = (old_rms ** 2) * (n - 1)
+    new_sum_sq = old_sum_sq + (nb ** 2)
+    value = sqrt(new_sum_sq / n)
+    return value
+
+def check_error(input_value):
+    try:
+        int(input_value)
+    except (ValueError, IndexError):
+        return 1
+    return 0
+
+def check_args():
+    if len(sys.argv) != 5:
+        return 1
+    try:
+        n = int(sys.argv[1])
+        a = float(sys.argv[2])
+        h = float(sys.argv[3])
+        sd = float(sys.argv[4])
+        if n < 0 or h == 0 or sd < 0:
+            return 1
+    except (ValueError, IndexError):
+        return 1
+    return 0
+
+def main():
+    if (len(sys.argv) == 2 and sys.argv[1] == "-h"):
+        print_help()
+        exit(0)
+    if check_args() == 1:
+        exit(84)
+    n = int(sys.argv[1])
+    a = float(sys.argv[2])
+    h = float(sys.argv[3])
+    sd = float(sys.argv[4])
+    rms = sqrt(a ** 2 + sd ** 2)
+    while (True):
+        input_value = input("Enter next value: ")
+        if (input_value == "END"):
+            exit(0)
+        if (check_error(input_value) == 1):
+            exit(84)
+        n += 1
+        nb = float(input_value)
+        print(f"\tNumber of values:\t{n}")
+        a = arithmetic(n, a, nb)
+        rms = root(n, rms, nb)
+        sd = deviation(rms, a)
+        print(f"\tStandard deviation:\t{sd:.2f}")
+        print(f"\tArithmetic mean:\t{a:.2f}")
+        print(f"\tRoot mean square:\t{rms:.2f}")
+        h = harmonic(n, h, nb)
+        print(f"\tHarmonic mean:\t\t{h:.2f}")
+        print()
+
+if __name__ == "__main__":
+    main()
