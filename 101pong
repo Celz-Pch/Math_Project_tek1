@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+import sys
+from math import acos, sqrt, pi
+
+def calculate_time(ref_x, ref_y, ref_z, vx, vy, vz, n):
+    return ref_x + vx * n, ref_y + vy * n, ref_z + vz * n
+
+def calculate_velocity(x0, y0, z0, x1, y1, z1):
+    return [(x1 - x0) / 1, (y1 - y0) / 1, (z1 - z0) / 1]
+
+def get_reach(vx, vy, vz):
+    norm_v = sqrt(vx**2 + vy**2 + vz**2)
+    if norm_v == 0:
+        exit(0)
+    angle = acos(abs(vz) / norm_v) * 180 / pi
+    incidence = 90 - angle
+    return incidence
+
+def pong(x0, y0, z0, x1, y1, z1, n):
+    velocity = calculate_velocity(x0, y0, z0, x1, y1, z1)
+    time_n = calculate_time(x1, y1, z1, velocity[0], velocity[1], velocity[2], n)
+    angle = get_reach(velocity[0], velocity[1], velocity[2])
+
+    print("The velocity vector of the ball is:")
+    print(f"({velocity[0]:.2f}, {velocity[1]:.2f}, {velocity[2]:.2f})")
+    print(f"At time t + {n}, ball coordinates will be:")
+    print(f"({time_n[0]:.2f}, {time_n[1]:.2f}, {time_n[2]:.2f})")
+
+    if (z1 == 0) or (z1 * velocity[2] > 0):
+        print("The ball won't reach the paddle.")
+    else:
+        print(f"The incidence angle is:\n{angle:.2f} degrees")
+
+def help_manual():
+                print("""USAGE
+    ./101pong x0 y0 z0 x1 y1 z1 n
+    
+DESCRIPTION
+    y0 ball ordinate at time t - 1
+    z0 ball altitude at time t - 1
+    x0 ball abscissa at time t - 1
+    x1 ball abscissa at time t
+    y1 ball ordinate at time t
+    z1 ball altitude at time t
+    n time shift (greater than or equal to zero, integer)""")
+
+def main():
+    if len(sys.argv) == 2 and sys.argv[1] == "-h":
+        help_manual()
+    if len(sys.argv) != 8:
+        exit(84)
+
+    try:
+        x0 = float(sys.argv[1])
+        y0 = float(sys.argv[2])
+        z0 = float(sys.argv[3])
+        x1 = float(sys.argv[4])
+        y1 = float(sys.argv[5])
+        z1 = float(sys.argv[6])
+        n = int(sys.argv[7])
+
+        if n < 0:
+            exit(84)
+
+    except ValueError:
+        exit(84)
+    except Exception:
+        exit(84)
+
+    try:
+        pong(x0, y0, z0, x1, y1, z1, n)
+    except Exception:
+        exit(84)
+
+    exit(0)
+
+if __name__ == "__main__":
+    main()
